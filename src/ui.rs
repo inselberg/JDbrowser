@@ -19,7 +19,7 @@ pub mod string_list;
 pub mod talbe_view;
 pub mod utils;
 
-const APP_NAME: &str = " JDbrowser ";
+const APP_NAME: &str = " JDbrowser insel-version ";
 
 pub struct Ui {
     file_list: StringList,
@@ -42,7 +42,7 @@ impl Ui {
         let lay = Layout::horizontal([Constraint::Fill(1)])
             .margin(1)
             .split(frame.area());
-        draw_outer_frame(frame, app, lay[0]);
+        draw_outer_frame(frame, app, &self.table_view, lay[0]);
         if let Some(db) = &app.current_db {
             self.table_view.draw(frame, db);
         } else {
@@ -82,33 +82,68 @@ impl Ui {
                     self.table_view.load_nav(db);
                 }
             }
-        } else if key.code == KeyCode::Char('k') {
+        } else if key.code == KeyCode::Char('k') || key.code == KeyCode::Up {
             self.file_list.list_state.select_previous();
-        } else if key.code == KeyCode::Char('j') {
+        } else if key.code == KeyCode::Char('j') || key.code == KeyCode::Down {
             self.file_list.list_state.select_next();
         }
         Ok(())
     }
 }
 
-fn draw_outer_frame(frame: &mut Frame, app: &App, area: Rect) {
+fn draw_outer_frame(frame: &mut Frame, app: &App, table_view: &TableView, area: Rect) {
     let mut key_binds: Vec<Span> = Vec::default();
-    append_keybinds(app, &mut key_binds);
+    append_keybinds(app, table_view, &mut key_binds);
     frame.render_widget(new_outer_frame(app, key_binds), area);
 }
 
-fn append_keybinds(app: &App, key_binds: &mut Vec<Span>) {
+fn append_keybinds(app: &App, table_view: &TableView, key_binds: &mut Vec<Span>) {
     if let Some(_pat) = &app.current_db {
-        let mut right_left_keys: Vec<Span> = vec![" Help ".into(), "[?] ".fg(HIGHLIGHTED_COLOR)];
-        key_binds.append(&mut right_left_keys);
+        use talbe_view::FocusPanel;
+
+        // Common keys
+        let mut keys: Vec<Span> = vec![" Tab ".into(), "[↹] ".fg(HIGHLIGHTED_COLOR)];
+
+        // Focus-specific keys
+        match table_view.focus {
+            FocusPanel::Navigation => {
+                keys.extend(vec![
+                    " Nav ".into(),
+                    "[j/k] ".fg(HIGHLIGHTED_COLOR),
+                    " Switch ".into(),
+                    "[e/w] ".fg(HIGHLIGHTED_COLOR),
+                ]);
+            }
+            FocusPanel::TableData => {
+                keys.extend(vec![
+                    " Move ".into(),
+                    "[↑↓←→] ".fg(HIGHLIGHTED_COLOR),
+                    " Page ".into(),
+                    "[u/d] ".fg(HIGHLIGHTED_COLOR),
+                    " Yank ".into(),
+                    "[y] ".fg(HIGHLIGHTED_COLOR),
+                ]);
+            }
+        }
+
+        keys.extend(vec![
+            " Help ".into(),
+            "[?] ".fg(HIGHLIGHTED_COLOR),
+            " Quit ".into(),
+            "[q] ".fg(HIGHLIGHTED_COLOR),
+        ]);
+
+        key_binds.append(&mut keys);
     } else {
         let mut enter_key: Vec<Span> = vec![
             " Up ".into(),
-            "[k]".fg(HIGHLIGHTED_COLOR),
+            "[k/↑]".fg(HIGHLIGHTED_COLOR),
             " Down ".into(),
-            "[j]".fg(HIGHLIGHTED_COLOR),
+            "[j/↓]".fg(HIGHLIGHTED_COLOR),
             " Select ".into(),
             "[Enter] ".fg(HIGHLIGHTED_COLOR),
+            " Quit ".into(),
+            "[q] ".fg(HIGHLIGHTED_COLOR),
         ];
         key_binds.append(&mut enter_key);
     }

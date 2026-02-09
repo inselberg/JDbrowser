@@ -19,6 +19,22 @@ use ratatui::{
 };
 use strum::{Display, EnumIter, IntoEnumIterator};
 
+#[derive(Clone, Copy, Default, Debug, Display, EnumIter, PartialEq)]
+pub enum FocusPanel {
+    #[default]
+    Navigation,
+    TableData,
+}
+
+impl FocusPanel {
+    pub fn toggle(&self) -> FocusPanel {
+        match self {
+            FocusPanel::Navigation => FocusPanel::TableData,
+            FocusPanel::TableData => FocusPanel::Navigation,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Default, Debug, Display, EnumIter)]
 pub enum SelectedTableTab {
     #[default]
@@ -126,6 +142,7 @@ pub struct TableView {
     pub table_state: TableState,
     table_scroll_height: u16,
     clipboard: Clipboard,
+    pub focus: FocusPanel,
 }
 
 impl Default for TableView {
@@ -139,6 +156,7 @@ impl Default for TableView {
             table_state: TableState::default(),
             table_scroll_height: 0,
             clipboard: Clipboard::new().unwrap(),
+            focus: FocusPanel::default(),
         }
     }
 }
@@ -169,9 +187,52 @@ impl TableView {
             .vertical_margin(2)
             .split(l);
 
-        //Tabs
-        frame.render_widget(self.table_nav_tab, l);
-        frame.render_widget(self.selected_table_tab, r);
+        // Tabs - highlight based on focus
+        let nav_block = if self.focus == FocusPanel::Navigation {
+            Block::default().border_type(BorderType::Double)
+        } else {
+            Block::default()
+        };
+        let table_block = if self.focus == FocusPanel::TableData {
+            Block::default()
+                .borders(Borders::LEFT)
+                .border_type(BorderType::Double)
+        } else {
+            Block::default().borders(Borders::LEFT)
+        };
+
+        frame.render_widget(
+            Tabs::new(
+                NavigationTab::iter().map(|x| Line::from(x.to_string()).fg(SECONDARY_COLOR).bold()),
+            )
+            .divider(symbols::DOT)
+            .highlight_style(
+                Style::default()
+                    .underlined()
+                    .underline_color(HIGHLIGHTED_COLOR),
+            )
+            .padding(" ", " ")
+            .select(self.table_nav_tab as usize)
+            .block(nav_block),
+            l,
+        );
+
+        frame.render_widget(
+            Tabs::new(
+                SelectedTableTab::iter()
+                    .map(|x| Line::from(x.to_string()).fg(SECONDARY_COLOR).bold()),
+            )
+            .divider(symbols::DOT)
+            .highlight_style(
+                Style::default()
+                    .underlined()
+                    .underline_color(HIGHLIGHTED_COLOR),
+            )
+            .padding(" ", " ")
+            .select(self.selected_table_tab as usize)
+            .block(table_block),
+            r,
+        );
 
         // Nav Lists
         self.draw_nav_lists(frame, nav_tab_inner[0]);
@@ -299,41 +360,61 @@ impl TableView {
         app: &mut App,
     ) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(db) = &app.current_db {
-            if key.code == KeyCode::Char('h') {
-                self.table_state.scroll_left_by(1);
-                return Ok(());
-            } else if key.code == KeyCode::Char('u') {
-                self.table_state.scroll_up_by(self.table_scroll_height);
-                return Ok(());
-            } else if key.code == KeyCode::Char('d') {
-                self.table_state.scroll_down_by(self.table_scroll_height);
-                return Ok(());
-            } else if key.code == KeyCode::Char('l') {
-                self.table_state.scroll_right_by(1);
-                return Ok(());
-            } else if key.code == KeyCode::Char('k') {
-                self.table_state.scroll_up_by(1);
-                return Ok(());
-            } else if key.code == KeyCode::Char('j') {
-                self.table_state.scroll_down_by(1);
-                return Ok(());
-            } else if key.code == KeyCode::Char('e') {
-                self.table_nav_tab = self.table_nav_tab.next();
-            } else if key.code == KeyCode::Char('q') {
-                self.table_nav_tab = self.table_nav_tab.previous();
-            } else if key.code == KeyCode::Char('L') {
-                self.selected_table_tab = self.selected_table_tab.next();
-            } else if key.code == KeyCode::Char('H') {
-                self.selected_table_tab = self.selected_table_tab.previous();
-            } else if key.code == KeyCode::Char('K') {
-                self.tables_list.list_state.select_previous();
-            } else if key.code == KeyCode::Char('J') {
-                self.tables_list.list_state.select_next();
-            } else if key.code == KeyCode::Char('y') {
-                self.yank_cell()?;
+            // Tab switches focus between panels
+            if key.code == KeyCode::Tab {
+                self.focus = self.focus.toggle();
                 return Ok(());
             }
-            self.load_table_data(app, db)?;
+
+            // Handle input based on focused panel
+            match self.focus {
+                FocusPanel::Navigation => {
+                    if key.code == KeyCode::Char('k') || key.code == KeyCode::Up {
+                        self.tables_list.list_state.select_previous();
+                        self.view_list.list_state.select_previous();
+                    } else if key.code == KeyCode::Char('j') || key.code == KeyCode::Down {
+                        self.tables_list.list_state.select_next();
+                        self.view_list.list_state.select_next();
+                    } else if key.code == KeyCode::Char('e') {
+                        self.table_nav_tab = self.table_nav_tab.next();
+                    } else if key.code == KeyCode::Char('w') {
+                        self.table_nav_tab = self.table_nav_tab.previous();
+                    } else if key.code == KeyCode::Char('K') {
+                        self.tables_list.list_state.select_previous();
+                    } else if key.code == KeyCode::Char('J') {
+                        self.tables_list.list_state.select_next();
+                    }
+                    self.load_table_data(app, db)?;
+                }
+                FocusPanel::TableData => {
+                    if key.code == KeyCode::Char('h') || key.code == KeyCode::Left {
+                        self.table_state.scroll_left_by(1);
+                        return Ok(());
+                    } else if key.code == KeyCode::Char('u') {
+                        self.table_state.scroll_up_by(self.table_scroll_height);
+                        return Ok(());
+                    } else if key.code == KeyCode::Char('d') {
+                        self.table_state.scroll_down_by(self.table_scroll_height);
+                        return Ok(());
+                    } else if key.code == KeyCode::Char('l') || key.code == KeyCode::Right {
+                        self.table_state.scroll_right_by(1);
+                        return Ok(());
+                    } else if key.code == KeyCode::Char('k') || key.code == KeyCode::Up {
+                        self.table_state.scroll_up_by(1);
+                        return Ok(());
+                    } else if key.code == KeyCode::Char('j') || key.code == KeyCode::Down {
+                        self.table_state.scroll_down_by(1);
+                        return Ok(());
+                    } else if key.code == KeyCode::Char('L') {
+                        self.selected_table_tab = self.selected_table_tab.next();
+                    } else if key.code == KeyCode::Char('H') {
+                        self.selected_table_tab = self.selected_table_tab.previous();
+                    } else if key.code == KeyCode::Char('y') {
+                        self.yank_cell()?;
+                        return Ok(());
+                    }
+                }
+            }
         }
         Ok(())
     }

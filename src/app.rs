@@ -52,7 +52,7 @@ impl App {
             let num_of_columns = stmt.column_names().len();
             let data: Vec<Vec<String>> = stmt
                 .query_map([], |row| map_row(num_of_columns, row))?
-                .map(|x| (x.unwrap_or_default()))
+                .map(|x| x.unwrap_or_default())
                 .collect();
             return Ok((
                 stmt.column_names().iter().map(|x| x.to_string()).collect(),

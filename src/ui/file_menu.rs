@@ -36,7 +36,7 @@ pub fn draw(frame: &mut Frame, list: &mut StringList) {
     frame.render_stateful_widget(widget, area, &mut list.list_state);
 }
 
-fn map_to_text(list: &[String]) -> Vec<Text> {
+fn map_to_text(list: &[String]) -> Vec<Text<'_>> {
     let text_items = list
         .iter()
         .map(|x| {

@@ -34,8 +34,9 @@ const TABLE_KEYS: [[&str; 2]; 8] = [
 ];
 
 const GENERAL_TITLE: &str = " General ";
-const GENERAL_KEYS: [[&str; 2]; 2] = [
-    ["Exit Application", "Escape"],
+const GENERAL_KEYS: [[&str; 2]; 3] = [
+    ["Switch Focus Panel", "Tab"],
+    ["Exit Application", "Escape / q"],
     ["Help Menu Open/Close", "?"],
 ];
 
@@ -48,7 +49,7 @@ pub fn draw_help_window(frame: &mut Frame, lay: Rect) {
     frame.render_widget(background, lay);
 
     let area = center(lay, Constraint::Length(60), Constraint::Length(60));
-    let split_area = Layout::vertical(Constraint::from_lengths([5, 5, 10, 4]))
+    let split_area = Layout::vertical(Constraint::from_lengths([5, 5, 10, 5]))
         .margin(2)
         .split(area);
     let widths = Constraint::from_lengths([40, 14]);

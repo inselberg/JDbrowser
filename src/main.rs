@@ -76,7 +76,10 @@ fn run_app<B: Backend>(
     terminal: &mut Terminal<B>,
     app: &mut App,
     ui: &mut Ui,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn std::error::Error>>
+where
+    <B as Backend>::Error: 'static,
+{
     loop {
         terminal.draw(|f| ui.ui(f, app))?;
         if let Event::Key(event) = event::read()? {
@@ -85,7 +88,7 @@ fn run_app<B: Backend>(
                 continue;
             }
             ui.handle_input(&event, app)?;
-            if event.code == KeyCode::Esc {
+            if event.code == KeyCode::Esc || event.code == KeyCode::Char('q') {
                 break;
             }
         }
