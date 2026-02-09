@@ -2,7 +2,26 @@
 
 Browse an Sqlite database from the terminal with a text user interface.
 
-![table_view](docs/t_view.png) 
+![table_view](docs/t_view.png)
+
+## Fork Changes
+
+This fork includes several enhancements over the original:
+
+### Static Linking
+- **No GLIBC dependencies**: Binary is statically linked using musl, works on any Linux system
+- Bundled SQLite library for complete portability
+- Single binary with no external dependencies
+
+### Enhanced Navigation
+- **Arrow key support**: Use arrow keys (↑↓←→) in addition to vim-style keys (hjkl)
+- **Tab key focus switching**: Press Tab to switch between navigation panel and table data panel
+- **Visual focus indicators**: Double borders show which panel is currently focused
+- **'q' key to quit**: Exit the application with 'q' in addition to Escape
+
+### Developer Experience
+- **Context-aware footer**: Shows relevant keybindings based on current focus
+- Updated to latest dependencies (ratatui 0.30, rusqlite 0.38) 
 
 # Usage
 
@@ -35,15 +54,16 @@ jdbrowser -f file_name.my_wierd_extention
 
 | Action | Keybind |
 | -------------- | --------------- |
-| Exit Application                        | Escape      |
-| Help Menu Open/Close | ?| 
+| Switch Focus Panel | Tab |
+| Exit Application | Escape / q |
+| Help Menu Open/Close | ? | 
 
 ### File Menu
 
 | Action | Keybind |
 | ------------- | -------------- |
-| Up        |  k        |
-| Down      |  j        |
+| Up        |  k / ↑        |
+| Down      |  j / ↓        |
 | Select    |  Enter    |
 
 ### Main view left side navigation
@@ -51,8 +71,8 @@ jdbrowser -f file_name.my_wierd_extention
 | Action | Keybind |
 | ------------- | -------------- |
 | Show Table/Views        |  q, e        |
-| Up        |  shift + k        |
-| Down      |  shift + j        |
+| Up        |  shift + k / ↑        |
+| Down      |  shift + j / ↓        |
 
 ### Table View
 
@@ -60,16 +80,49 @@ jdbrowser -f file_name.my_wierd_extention
 | ------------- | -------------- |
 | View Data/Schema        |  shift + h, l        |
 | Page Up / Down Half |  u, d |  
-| Move Cell Up | k    |
-|    Move Cell Down | j |
-| Move Cell Left| h |
-| Move Cell Right | l |
+| Move Cell Up | k / ↑    |
+| Move Cell Down | j / ↓ |
+| Move Cell Left| h / ← |
+| Move Cell Right | l / → |
 | Yank Cell to Clipboard | y |
 
 
 # Installation and Building
 
-No configuration needed.
+### Prerequisites
+
+For static linking (recommended), you need musl-tools:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install musl-tools
+
+# Arch Linux
+sudo pacman -S musl
+
+# Then add the musl target
+rustup target add x86_64-unknown-linux-musl
+```
+
+### Quick Build (Recommended)
+
+Use the included Makefile for easy building:
+
+```bash
+# Build statically-linked release binary
+make
+
+# Copy to local and remote locations
+make copy
+
+# Install to /usr/local/bin
+make install
+
+# Check if binary is statically linked
+make check-static
+```
+
+The binary will be available at `target/x86_64-unknown-linux-musl/release/jdbrowser`
 
 ### Arch Linux
 
@@ -93,24 +146,23 @@ A simple way to install the binary using Rust:
 cargo install --path .
 ```
 
-### Build with Rust
+### Build with Rust Manually
 
-A binary can also be directly built with:
+Build a statically-linked binary (recommended):
+
+```bash
+cargo build --release --target x86_64-unknown-linux-musl
+```
+
+Or build with system glibc (may have compatibility issues):
 
 ```bash
 cargo build --release 
 ```
 
-or:
-
-64-bit Linux (kernel 3.2+, glibc 2.17+)
-
-```bash
-cargo build --release --target x86_64-unknown-linux-gnu 
-```
-
-
-The binary will be available at ***target/release/jdbrowser***
+The binary will be available at:
+- Static: `target/x86_64-unknown-linux-musl/release/jdbrowser`
+- Dynamic: `target/release/jdbrowser`
 
 # Screen Shots
 
