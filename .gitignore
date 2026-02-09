@@ -4,3 +4,7 @@
 /*.db3
 *.sql
 
+.vscode
+.history
+Makefile
+target/
