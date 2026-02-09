@@ -1,4 +1,4 @@
-# JDbrowser - Terminal TUI Sqlite Browser V1.4
+# JDbrowser - Terminal TUI Sqlite Browser V1.4 (FORK)
 
 Browse an Sqlite database from the terminal with a text user interface.
 
