@@ -1,8 +1,8 @@
 [package]
 name = "jdbrowser"
-version = "1.4.1"
+version = "1.5.0"
 edition = "2021"
-authors = ["Jonathan Keyuk"]
+authors = ["Jonathan Keyuk","inselberg"]
 license = "GNU GPLv3"
 description = "A tool to browse Sqlite databases"
 readme = "readme.md"

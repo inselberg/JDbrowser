@@ -19,7 +19,7 @@ pub mod string_list;
 pub mod talbe_view;
 pub mod utils;
 
-const APP_NAME: &str = concat!(" JDbrowser insel-v", env!("CARGO_PKG_VERSION"), "");
+const APP_NAME: &str = concat!("JDbrowser fork by insel v", env!("CARGO_PKG_VERSION"), "");
 
 pub struct Ui {
     file_list: StringList,

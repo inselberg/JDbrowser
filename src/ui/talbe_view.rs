@@ -415,6 +415,19 @@ impl TableView {
                     } else if key.code == KeyCode::Delete {
                         self.delete_row(app, db)?;
                         return Ok(());
+                    } else if key.code == KeyCode::Home {
+                        // Jump to first row
+                        if let Some((_row, col)) = self.table_state.selected_cell() {
+                            self.table_state.select_cell(Some((0, col)));
+                        }
+                        return Ok(());
+                    } else if key.code == KeyCode::End {
+                        // Jump to last row
+                        if let Some((_row, col)) = self.table_state.selected_cell() {
+                            let last_row = self.data.1.len().saturating_sub(1);
+                            self.table_state.select_cell(Some((last_row, col)));
+                        }
+                        return Ok(());
                     }
                 }
             }
@@ -434,7 +447,7 @@ impl TableView {
     }
 
     fn delete_row(&mut self, app: &App, db: &Db) -> Result<(), Box<dyn std::error::Error>> {
-        if let Some((row_index, _col)) = self.table_state.selected_cell() {
+        if let Some((row_index, col)) = self.table_state.selected_cell() {
             if let Some(row) = self.data.1.get(row_index) {
                 // First column is rowid
                 if let Some(rowid_str) = row.get(0) {
@@ -443,6 +456,9 @@ impl TableView {
                             app.delete_row(table, rowid)?;
                             // Reload the table data
                             self.load_table_data(app, db)?;
+                            // Move cursor to previous row (or stay at 0 if first row was deleted)
+                            let new_row = row_index.saturating_sub(1);
+                            self.table_state.select_cell(Some((new_row, col)));
                         }
                     }
                 }
