@@ -44,7 +44,7 @@ impl App {
         &self,
         table: &Table,
     ) -> Result<(Vec<String>, Vec<Vec<String>>), rusqlite::Error> {
-        let sql = format!("SELECT * FROM {};", table.name);
+        let sql = format!("SELECT rowid, * FROM {};", table.name);
         if let Some(db) = &self.current_db {
             let con = Connection::open(&db.path)?;
             let mut stmt = con.prepare(&sql)?;
@@ -60,6 +60,16 @@ impl App {
             ));
         }
         Ok((Vec::default(), Vec::default()))
+    }
+
+    /// Delete a row from the database table using ROWID
+    pub fn delete_row(&self, table: &Table, rowid: i64) -> Result<(), rusqlite::Error> {
+        if let Some(db) = &self.current_db {
+            let con = Connection::open(&db.path)?;
+            let sql = format!("DELETE FROM {} WHERE rowid = ?;", table.name);
+            con.execute(&sql, [rowid])?;
+        }
+        Ok(())
     }
 }
 

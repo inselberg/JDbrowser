@@ -412,6 +412,9 @@ impl TableView {
                     } else if key.code == KeyCode::Char('y') {
                         self.yank_cell()?;
                         return Ok(());
+                    } else if key.code == KeyCode::Delete {
+                        self.delete_row(app, db)?;
+                        return Ok(());
                     }
                 }
             }
@@ -428,6 +431,24 @@ impl TableView {
                 }
             }
         })
+    }
+
+    fn delete_row(&mut self, app: &App, db: &Db) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some((row_index, _col)) = self.table_state.selected_cell() {
+            if let Some(row) = self.data.1.get(row_index) {
+                // First column is rowid
+                if let Some(rowid_str) = row.get(0) {
+                    if let Ok(rowid) = rowid_str.parse::<i64>() {
+                        if let Some(table) = self.get_selected_table(db) {
+                            app.delete_row(table, rowid)?;
+                            // Reload the table data
+                            self.load_table_data(app, db)?;
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
     }
 
     fn load_table_data(&mut self, app: &App, db: &Db) -> Result<(), Box<dyn std::error::Error>> {
